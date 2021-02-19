@@ -3,6 +3,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.urls import reverse
+from django.utils import timezone
 
 
 # User = get_user_model()
@@ -30,9 +31,9 @@ class Product(models.Model):
 
 class CartProduct(models.Model):
     # user = models.ForeignKey('Customer', verbose_name='Покупатель', on_delete=models.CASCADE)
-    cart = models.ForeignKey('Cart', verbose_name='Корзина', on_delete=models.CASCADE,
+    cart = models.ForeignKey('Cart', null=True, verbose_name='Корзина', on_delete=models.CASCADE,
                              related_name='related_products')
-    product = models.ForeignKey(Product, verbose_name='Товар', on_delete=models.CASCADE)
+    product = models.ForeignKey(Product, null=True, verbose_name='Товар', on_delete=models.CASCADE)
     # content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
     # object_id = models.PositiveIntegerField()
     # content_object = GenericForeignKey('content_type', 'object_id')
@@ -60,20 +61,22 @@ class Cart(models.Model):
     def __str__(self):
         return f'Корзина: {self.id}'
 
-    def save(self, *args, **kwargs):
-        cart_data = self.products.aggregate(models.Sum('final_price'))
-        print(f'Печать cart_data: {cart_data}')
-        if cart_data.get('final_price__sum'):
-            self.final_price = cart_data.get('final_price__sum')
-        else:
-            self.final_price = 0
-        super().save(*args, **kwargs)
+    # def save(self, *args, **kwargs):
+    #     cart_data = self.products.aggregate(models.Sum('final_price'))
+    #     print(f'Печать cart_data: {cart_data}')
+    #     if cart_data.get('final_price__sum'):
+    #         self.final_price = cart_data.get('final_price__sum')
+    #     else:
+    #         self.final_price = 0
+    #     super().save(*args, **kwargs)
 
 
 class Order(models.Model):
+    cart = models.ForeignKey(Cart, verbose_name='Корзина', on_delete=models.CASCADE, null=True,
+                             blank=True)
     name = models.CharField(max_length=150, verbose_name='Имя', null=False, blank=False)
-    phone = models.CharField(max_length=12, verbose_name='Телефон',null=False, blank=False)
-    email = models.CharField(max_length=255, verbose_name='Email',null=False, blank=False)
+    phone = models.CharField(max_length=12, verbose_name='Телефон', null=False, blank=False)
+    email = models.EmailField(max_length=254, verbose_name='Email', null=False, blank=False)
 
     def __str__(self):
         return str(self.id)
